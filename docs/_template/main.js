@@ -49,7 +49,8 @@ function update() {
   // start next obstacle wave
   if (obstacle == null) {
     addPlayers(); // spawn players
-    obstacle = rnd(0, 1) < 0.5 ? new Barrel : new Wall(); // spawn random obstacle
+    obstacle = new Platform();
+    // obstacle = rnd(0, 1) < 0.5 ? new Barrel : new Wall(); // spawn random obstacle
   }
 
   // move obstacle across the screen
@@ -326,13 +327,40 @@ class Wall {
   }
 
   draw() {
-    rect(this.pos.x, this.pos.y, this.width, this.height);
-    rect(this.pos.x, this.height + this.gap, this.width, 100);
+    rect(this.pos.x, this.pos.y, this.width, this.height); // top rect
+    rect(this.pos.x, this.height + this.gap, this.width, 100); // bottom rect
 
     particle(this.pos.x, 95, 0.3, this.vx * 2, -0.4, 0.5);
   }
 
   isOffScreen() {
     return this.pos.x < -this.width;
+  }
+}
+
+class Platform {
+  constructor() {
+    this.type = "platform";
+
+    // obstacle parameters
+    this.pos = vec(110, rnd(60, 80));
+    this.vx = rnd(0.7, 1.2);
+    this.gap = rnd(30, 60);
+    this.width = rnd(10, 40)
+    this.height = 6;
+  }
+
+  update(difficulty) {
+    this.pos.x -= this.vx * difficulty;
+    this.draw();
+  }
+
+  draw() {
+    rect(this.pos.x, this.pos.y, this.width, this.height); // left rect
+    rect(this.pos.x + this.width + this.gap, this.pos.y, this.width, this.height); // right rect
+  } 
+
+  isOffScreen() {
+    return this.pos.x + this.width*2 + this.gap < -10;
   }
 }
