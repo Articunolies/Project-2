@@ -23,58 +23,32 @@ ll  l
   `,
 ];
 
+// Game settings
 options = {
-  isPlayingBgm: true,
+  isPlayingBgm: false,
   isReplayEnabled: true,
   seed: 16,
 };
 
-let players;
-let downedPlayers;
-const playersCount = 9;
-let barrel;
+// Gameplay parameters
+let players; // list
+let downedPlayers; // list
+const playersCount = 8;
+let obstacle;
 
 function update() {
   if (!ticks) {
     players = [];
     downedPlayers = [];
-    barrel = undefined;
+    obstacle = undefined;
   }
-  if (barrel == null) {
+  if (obstacle == null) {
     addPlayers();
-    const r = rnd(5, 25);
-    barrel = {
-      pos: vec(120 + r, 93 - r),
-      vx: rnd(1, 2) / sqrt(r * 0.3 + 1),
-      r,
-      angle: rnd(PI * 2),
-    };
+    obstacle = rnd(0, 1) < 0.5 ? new Barrel() : new Wall();
   }
-  barrel.pos.x -= barrel.vx * difficulty;
-  arc(
-    barrel.pos,
-    barrel.r,
-    3 + barrel.r * 0.1,
-    barrel.angle,
-    barrel.angle + PI
-  );
-  arc(
-    barrel.pos,
-    barrel.r,
-    3 + barrel.r * 0.1,
-    barrel.angle + PI,
-    barrel.angle + PI + PI
-  );
-  barrel.angle -= (barrel.vx / barrel.r) * 1;
-  particle(
-    barrel.pos.x,
-    barrel.pos.y + barrel.r,
-    barrel.r * 0.05,
-    barrel.vx * 5,
-    -0.1,
-    0.2
-  );
-  barrel.ticks++;
+
+  obstacle.update(difficulty);
+
   rect(0, 93, 99, 7);
   let addingPlayerCount = 0;
   players = players.filter((p) => {
@@ -82,7 +56,7 @@ function update() {
     if (p.underFoot == null) {
       players.forEach((ap) => {
         if (p !== ap && p.isOnFloor && p.pos.distanceTo(ap.pos) < 4) {
-          play("select");
+          // play("select");
           let bp = p;
           for (let i = 0; i < 99; i++) {
             if (bp.underFoot == null) {
@@ -122,7 +96,7 @@ function update() {
       input.isJustPressed &&
       (p.isOnFloor || (p.underFoot != null && p.underFoot.isJumped))
     ) {
-      play("jump");
+      // play("jump");
       p.vel.set(0, -1.5);
       particle(p.pos, 10, 2, PI / 2, 0.5);
       p.isOnFloor = false;
@@ -147,8 +121,9 @@ function update() {
         p.vel.x -= 0.01 * sqrt(p.pos.x - 50 + 1);
       }
       if (p.isOnFloor) {
-        if (p.pos.x < barrel.pos.x) {
-          p.vel.x -= (0.1 * sqrt(barrel.r)) / sqrt(barrel.pos.x - p.pos.x + 1);
+        if (p.pos.x < obstacle.pos.x) {
+          p.vel.x -=
+            (0.1 * sqrt(obstacle.r)) / sqrt(obstacle.pos.x - p.pos.x + 1);
         }
       } else {
         p.vel.y += 0.1;
@@ -174,10 +149,10 @@ function update() {
       if (p.underFoot != null) {
         p.underFoot.onHead = undefined;
       }
-      play("hit");
+      // play("hit");
       downedPlayers.push({
         pos: vec(p.pos),
-        vel: vec(p.vel).add(-barrel.vx * 2, 0),
+        vel: vec(p.vel).add(-obstacle.vx * 2, 0),
       });
       return false;
     }
@@ -195,7 +170,7 @@ function update() {
     }
   });
   if (players.length <= 0) {
-    play("lucky");
+    // play("lucky");
     end();
   }
   downedPlayers = downedPlayers.filter((p) => {
@@ -204,14 +179,14 @@ function update() {
     char("a", p.pos, { mirror: { y: -1 } });
     return p.pos.y < 105;
   });
-  if (barrel.pos.x < -barrel.r) {
-    barrel = undefined;
+  if (obstacle.isOffScreen()) {
+    obstacle = undefined;
     addScore(players.length, 10, 50);
   }
 }
 
 function addPlayers() {
-  play("powerUp");
+  // play("powerUp");
   while (players.length < playersCount) {
     addPlayer();
   }
@@ -228,4 +203,72 @@ function addPlayer() {
     onHead: undefined,
     ticks: rndi(60),
   });
+}
+
+class Barrel {
+  constructor() {
+    this.type = "barrel";
+
+    // obstacle parameters
+    this.r = rnd(5, 25);
+    this.pos = vec(120 + this.r, 93 - this.r);
+    this.vx = rnd(1, 2) / sqrt(this.r * 0.3 + 1);
+    this.angle = rnd(PI * 2);
+  }
+
+  update(difficulty) {
+    this.pos.x -= this.vx * difficulty;
+    this.draw();
+  }
+
+  draw() {
+    arc(this.pos, this.r, 3 + this.r * 0.1, this.angle, this.angle + PI);
+    arc(
+      this.pos,
+      this.r,
+      3 + this.r * 0.1,
+      this.angle + PI,
+      this.angle + PI + PI
+    );
+    this.angle -= (this.vx / this.r) * 1;
+    particle(
+      this.pos.x,
+      this.pos.y + this.r,
+      this.r * 0.05,
+      this.vx * 5,
+      -0.1,
+      0.2
+    );
+  }
+
+  isOffScreen() {
+    return this.pos.x < -this.r;
+  }
+}
+
+class Wall {
+  constructor() {
+    this.type = "wall";
+
+    // obstacle parameters
+    this.pos = vec(100, 0);
+    this.vx = rnd(0.3, 1);
+    this.gap = rnd(30, 60);
+    this.width = 6;
+    this.height = rnd(5, 30);
+  }
+
+  update(difficulty) {
+    this.pos.x -= this.vx * difficulty;
+    this.draw();
+  }
+
+  draw() {
+    rect(this.pos.x, this.pos.y, this.width, this.height);
+    rect(this.pos.x, this.height + this.gap, this.width, 100);
+  }
+
+  isOffScreen() {
+    return this.pos.x < -this.width;
+  }
 }
