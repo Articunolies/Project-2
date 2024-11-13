@@ -34,8 +34,9 @@ options = {
 // Gameplay parameters
 let players; // list
 let downedPlayers; // list
-const playersCount = 8;
+let playersCount = 8;
 let obstacle;
+let extraLifeItem;
 
 // Main game loop
 function update() {
@@ -44,17 +45,23 @@ function update() {
     players = [];
     downedPlayers = [];
     obstacle = undefined;
+    extraLifeItem = undefined;
   }
 
   // start next obstacle wave
   if (obstacle == null) {
     addPlayers(); // spawn players
     obstacle = getRandomObstacle();
-    // obstacle = rnd(0, 1) < 0.5 ? new Barrel : new Wall(); // spawn random obstacle
+    extraLifeItem = new ExtraLifeItem();
   }
 
   // move obstacle across the screen
   obstacle.update(difficulty);
+
+  // move item across screen if player hasn't yet collected it
+  if (extraLifeItem) {
+    extraLifeItem.update(difficulty);
+  }
 
   // draw ground
   rect(0, 93, 99, 7);
@@ -66,8 +73,10 @@ function update() {
   updateDownedPlayers();
 
   // Check if obstacle is off screen
-  if (obstacle.isOffScreen()) {
+  if (obstacle.isOffScreen() && (!extraLifeItem || extraLifeItem.isOffScreen())) {
+    console.log(playersCount)
     obstacle = undefined;
+    extraLifeItem = undefined;
     addScore(players.length, 10, 50);
   }
 }
@@ -108,6 +117,11 @@ function updatePlayers() {
     if (isCollidingWithObstacle(player)) {
       handleCollision(player);
       return false;
+    }
+
+    if (hitExtraLifeItem(player)) {
+      playersCount++;
+      extraLifeItem = undefined;
     }
 
     if (!playerOutOfBounds(player)) {
@@ -258,6 +272,11 @@ function checkGameOver() {
   }
 }
 
+function hitExtraLifeItem(p) {
+  return char(addWithCharCode("a", floor(p.ticks / 30) % 2), p.pos).isColliding
+    .rect.blue;
+}
+
 function updateDownedPlayers() {
   downedPlayers = downedPlayers.filter((p) => {
     p.pos.add(p.vel);
@@ -356,9 +375,9 @@ class Platform {
 
     // obstacle parameters
     this.pos = vec(110, rnd(60, 80));
-    this.vx =rnd(0.5, 1);
+    this.vx = rnd(0.5, 1);
     this.gap = rnd(30, 60);
-    this.width = rnd(10, 40)
+    this.width = rnd(10, 40);
     this.height = 6;
   }
 
@@ -369,10 +388,38 @@ class Platform {
 
   draw() {
     rect(this.pos.x, this.pos.y, this.width, this.height); // left rect
-    rect(this.pos.x + this.width + this.gap, this.pos.y, this.width, this.height); // right rect
-  } 
+    rect(
+      this.pos.x + this.width + this.gap,
+      this.pos.y,
+      this.width,
+      this.height
+    ); // right rect
+  }
 
   isOffScreen() {
-    return this.pos.x + this.width*2 + this.gap < -10;
+    return this.pos.x + this.width * 2 + this.gap < -10;
+  }
+}
+
+class ExtraLifeItem {
+  constructor() {
+    this.pos = vec(110, rnd(30, 80));
+    this.vx = rnd(0.5, 1);
+    this.radius = 0.5;
+  }
+
+  update() {
+    this.pos.x -= this.vx * difficulty;
+    this.draw();
+  }
+
+  draw() {
+    color("blue");
+    arc(this.pos, this.radius, 5, 360);
+    color("black");
+  }
+
+  isOffScreen() {
+    return this.pos.x < -this.radius;
   }
 }
