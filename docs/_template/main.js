@@ -26,25 +26,32 @@ ll  l
 
 // Game settings
 options = {
-  isPlayingBgm: false,
+  isPlayingBgm: true,
   isReplayEnabled: true,
   seed: 16,
 };
 
-// Gameplay parameters
-let players;
-let downedPlayers;
-let playersCount = 8;
+// Interactables
 let obstacle;
 let extraLifeItem;
 let bonusPlayers = false;
 let invincibilityItem;
 let invincibility = false;
+let meteor;
+let groundSlamActivated = true;
 
-const JUMP_HEIGHT = 1.75;
+// Gameplay parameters
+const PLAYER_JUMP_HEIGHT = 1.75;
+const METEOR_SLAM_FORCE = 2.5;
+const METEOR_SPAWN_RATE = 0.15;
 const BONUS_PLAYER_COUNT = 2;
 const BONUS_LIFE_SPAWN_RATE = 0.4;
 const INVINCIBILITY_SPAWN_RATE = 0.2;
+
+let players;
+let downedPlayers;
+let playersCount = 8;
+let jump_height = PLAYER_JUMP_HEIGHT;
 
 // Main game loop
 function update() {
@@ -75,6 +82,18 @@ function update() {
     invincibilityItem.update(difficulty);
   }
 
+  if (meteor) {
+    meteor.update(difficulty);
+
+    if (meteor.isOffScreen() && groundSlamActivated) {
+      play("explosion");
+      jump_height = METEOR_SLAM_FORCE;
+      groundSlam();
+      jump_height = PLAYER_JUMP_HEIGHT;
+      groundSlamActivated = false;
+    }
+  }
+
   // draw ground
   rect(0, 93, 99, 7);
 
@@ -88,6 +107,7 @@ function update() {
   if (isWaveOver()) {
     resetWaveElements();
     addScore(players.length, 10, 50);
+    groundSlamActivated = true;
   }
 }
 
@@ -98,6 +118,7 @@ function spawnWave() {
     rnd(0, 1) < BONUS_LIFE_SPAWN_RATE ? new ExtraLifeItem() : undefined; // randomly spawn extra life
   invincibilityItem =
     rnd(0, 1) < INVINCIBILITY_SPAWN_RATE ? new InvincibilityItem() : undefined; // randomly spawn invincibility item
+  meteor = rnd(0, 1) < METEOR_SPAWN_RATE ? new Meteor() : undefined; // randomly spawn meteor
 }
 
 function isWaveOver() {
@@ -106,6 +127,12 @@ function isWaveOver() {
     (!extraLifeItem || extraLifeItem.isOffScreen()) &&
     (!invincibilityItem || invincibilityItem.isOffScreen())
   );
+}
+
+function groundSlam() {
+  players.forEach((p) => {
+    jump(p);
+  });
 }
 
 function resetWaveElements() {
@@ -117,7 +144,7 @@ function resetWaveElements() {
 
 // incrementally add players until max player count is reached
 function addPlayers() {
-  // play("powerUp");
+  play("powerUp");
   let extraPlayers = bonusPlayers ? BONUS_PLAYER_COUNT : 0;
   while (players.length < playersCount + extraPlayers) {
     addPlayer();
@@ -156,11 +183,13 @@ function updatePlayers() {
     }
 
     if (hitExtraLifeItem(player)) {
+      play("coin");
       bonusPlayers = true;
       extraLifeItem = undefined;
     }
 
     if (hitInvincibilityItem(player)) {
+      play("laser")
       invincibility = true;
       invincibilityItem = undefined;
     }
@@ -181,7 +210,7 @@ function handleStacking(p) {
   if (p.underFoot == null) {
     players.forEach((ap) => {
       if (p !== ap && p.isOnFloor && p.pos.distanceTo(ap.pos) < 4) {
-        // play("select");
+        play("select");
         let bp = p;
         for (let i = 0; i < 99; i++) {
           if (bp.underFoot == null) {
@@ -224,15 +253,19 @@ function handleJumping(p) {
     input.isJustPressed &&
     (p.isOnFloor || (p.underFoot != null && p.underFoot.isJumped))
   ) {
-    // play("jump");
-    p.vel.set(0, -JUMP_HEIGHT);
-    particle(p.pos, 10, 2, PI / 2, 0.5);
-    p.isOnFloor = false;
-    p.isJumping = true;
-    if (p.underFoot != null) {
-      p.underFoot.onHead = undefined;
-      p.underFoot = undefined;
-    }
+    jump(p);
+  }
+}
+
+function jump(p) {
+  play("jump");
+  p.vel.set(0, -jump_height);
+  particle(p.pos, 10, 2, PI / 2, 0.5);
+  p.isOnFloor = false;
+  p.isJumping = true;
+  if (p.underFoot != null) {
+    p.underFoot.onHead = undefined;
+    p.underFoot = undefined;
   }
 }
 
@@ -309,7 +342,7 @@ function playerOutOfBounds(p) {
 
 function checkGameOver() {
   if (players.length <= 0) {
-    // play("lucky");
+    play("lucky");
     end();
   }
 }
@@ -498,5 +531,38 @@ class InvincibilityItem {
 
   isOffScreen() {
     return this.pos.x < -this.radius;
+  }
+}
+
+class Meteor {
+  constructor() {
+    this.pos = vec(50, -10);
+    this.vx = rnd(-0.5, 0.5);
+    this.vy = rnd(1, 2);
+    this.width = 8;
+  }
+
+  update() {
+    this.pos.x -= this.vx * difficulty;
+    this.pos.y += this.vy;
+    this.draw();
+  }
+
+  draw() {
+    color("red");
+    rect(this.pos.x, this.pos.y, this.width, this.width);
+    particle(
+      this.pos.x + this.width / 2 - 1,
+      this.pos.y + this.width / 2,
+      1,
+      -this.vy,
+      1.5,
+      2
+    );
+    color("black");
+  }
+
+  isOffScreen() {
+    return this.pos.y > 80;
   }
 }
