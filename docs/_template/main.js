@@ -485,12 +485,14 @@ class InvincibilityItem {
 
   update() {
     this.pos.x -= this.vx * difficulty;
+    this.pos.y += rnd(-2, 2);
     this.draw();
   }
 
   draw() {
     color("yellow");
     arc(this.pos, this.radius, 5, 360);
+    particle(this.pos.x, this.pos.y + this.radius, 0.3, this.vx, 0, 2);
     color("black");
   }
 
