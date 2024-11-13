@@ -43,6 +43,7 @@ let meteorSpawnedThisRound = false;
 
 // Gameplay parameters
 const PLAYER_JUMP_HEIGHT = 1.75;
+const JUMP_DILATION = 175; // (0-inf) range. Higher number = less jump dilation
 const METEOR_SLAM_FORCE = 2.5;
 const METEOR_SPAWN_RATE = 0.15;
 const BONUS_PLAYER_COUNT = 2;
@@ -267,7 +268,7 @@ function handleJumping(p) {
 
 function jump(p, jump_height) {
   play("jump");
-  p.vel.set(0, -jump_height);
+  p.vel.set(0, -jump_height * (1 + (100 - p.pos.y) / JUMP_DILATION));
   particle(p.pos, 10, 2, PI / 2, 0.5);
   p.isOnFloor = false;
   p.isJumping = true;
