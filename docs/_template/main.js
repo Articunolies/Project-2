@@ -49,7 +49,7 @@ function update() {
   // start next obstacle wave
   if (obstacle == null) {
     addPlayers(); // spawn players
-    obstacle = new Wall(); // spawn random obstacle
+    obstacle = rnd(0, 1) < 0.5 ? new Barrel : new Wall(); // spawn random obstacle
   }
 
   // move obstacle across the screen
@@ -207,7 +207,7 @@ function updatePlayerPositionAndVelocity(p) {
     if (p.isOnFloor) {
       if (p.pos.x < obstacle.pos.x) {
         p.vel.x -=
-          (0.1 * sqrt(obstacle.r)) / sqrt(obstacle.pos.x - p.pos.x + 1);
+          (0.1 * sqrt(rnd(5, 25))) / sqrt(obstacle.pos.x - p.pos.x + 1);
       }
     } else {
       p.vel.y += 0.1;
@@ -314,7 +314,7 @@ class Wall {
 
     // obstacle parameters
     this.pos = vec(110, 0);
-    this.vx = rnd(0.4, 1);
+    this.vx = rnd(0.5, 1);
     this.gap = rnd(30, 60);
     this.width = 6;
     this.height = rnd(5, 30);
