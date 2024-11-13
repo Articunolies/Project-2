@@ -70,6 +70,7 @@ function update() {
     extraLifeItem.update(difficulty);
   }
 
+  // move invincibility item across screen
   if (invincibilityItem) {
     invincibilityItem.update(difficulty);
   }
@@ -83,16 +84,9 @@ function update() {
   checkGameOver();
   updateDownedPlayers();
 
-  // End wave once all wave elements are destroyed
-  if (
-    obstacle.isOffScreen() &&
-    (!extraLifeItem || extraLifeItem.isOffScreen()) &&
-    (!invincibilityItem || invincibilityItem.isOffScreen())
-  ) {
-    obstacle = undefined;
-    extraLifeItem = undefined;
-    invincibilityItem = undefined;
-    invincibility = false;
+  // End wave once all wave elements are destroyed/off screen
+  if (isWaveOver()) {
+    resetWaveElements();
     addScore(players.length, 10, 50);
   }
 }
@@ -100,8 +94,25 @@ function update() {
 function spawnWave() {
   addPlayers(); // spawn players
   obstacle = getRandomObstacle(); // spawn obstacle
-  extraLifeItem = rnd(0, 1) < BONUS_LIFE_SPAWN_RATE ? new ExtraLifeItem() : undefined; // randomly spawn extra life
-  invincibilityItem = rnd(0, 1) < INVINCIBILITY_SPAWN_RATE ? new InvincibilityItem() : undefined; // randomly spawn invincibility item
+  extraLifeItem =
+    rnd(0, 1) < BONUS_LIFE_SPAWN_RATE ? new ExtraLifeItem() : undefined; // randomly spawn extra life
+  invincibilityItem =
+    rnd(0, 1) < INVINCIBILITY_SPAWN_RATE ? new InvincibilityItem() : undefined; // randomly spawn invincibility item
+}
+
+function isWaveOver() {
+  return (
+    obstacle.isOffScreen() &&
+    (!extraLifeItem || extraLifeItem.isOffScreen()) &&
+    (!invincibilityItem || invincibilityItem.isOffScreen())
+  );
+}
+
+function resetWaveElements() {
+  obstacle = undefined;
+  extraLifeItem = undefined;
+  invincibilityItem = undefined;
+  invincibility = false;
 }
 
 // incrementally add players until max player count is reached
