@@ -49,7 +49,7 @@ function update() {
   // start next obstacle wave
   if (obstacle == null) {
     addPlayers(); // spawn players
-    obstacle = new Platform();
+    obstacle = getRandomObstacle();
     // obstacle = rnd(0, 1) < 0.5 ? new Barrel : new Wall(); // spawn random obstacle
   }
 
@@ -267,6 +267,18 @@ function updateDownedPlayers() {
   });
 }
 
+function getRandomObstacle() {
+  const randomValue = rnd(0, 3);
+
+  if (randomValue < 1) {
+    return new Wall();
+  } else if (randomValue < 2) {
+    return new Platform();
+  } else {
+    return new Barrel();
+  }
+}
+
 // Obstacle prefabs
 class Barrel {
   constructor() {
@@ -315,10 +327,10 @@ class Wall {
 
     // obstacle parameters
     this.pos = vec(110, 0);
-    this.vx = rnd(0.5, 1);
+    this.vx = rnd(0.4, 0.9);
     this.gap = rnd(30, 60);
     this.width = 6;
-    this.height = rnd(5, 30);
+    this.height = rnd(15, 30);
   }
 
   update(difficulty) {
@@ -344,7 +356,7 @@ class Platform {
 
     // obstacle parameters
     this.pos = vec(110, rnd(60, 80));
-    this.vx = rnd(0.7, 1.2);
+    this.vx =rnd(0.5, 1);
     this.gap = rnd(30, 60);
     this.width = rnd(10, 40)
     this.height = 6;
