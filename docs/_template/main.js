@@ -32,14 +32,19 @@ options = {
 };
 
 // Gameplay parameters
-let players; // list
-let downedPlayers; // list
+let players;
+let downedPlayers;
 let playersCount = 8;
 let obstacle;
 let extraLifeItem;
 let bonusPlayers = false;
+let invincibilityItem;
+let invincibility = false;
 
+const JUMP_HEIGHT = 1.75;
 const BONUS_PLAYER_COUNT = 2;
+const BONUS_LIFE_SPAWN_RATE = 0.4;
+const INVINCIBILITY_SPAWN_RATE = 0.2;
 
 // Main game loop
 function update() {
@@ -49,6 +54,7 @@ function update() {
     downedPlayers = [];
     obstacle = undefined;
     extraLifeItem = undefined;
+    invincibilityItem = undefined;
   }
 
   // start next obstacle wave
@@ -64,6 +70,10 @@ function update() {
     extraLifeItem.update(difficulty);
   }
 
+  if (invincibilityItem) {
+    invincibilityItem.update(difficulty);
+  }
+
   // draw ground
   rect(0, 93, 99, 7);
 
@@ -76,10 +86,13 @@ function update() {
   // End wave once all wave elements are destroyed
   if (
     obstacle.isOffScreen() &&
-    (!extraLifeItem || extraLifeItem.isOffScreen())
+    (!extraLifeItem || extraLifeItem.isOffScreen()) &&
+    (!invincibilityItem || invincibilityItem.isOffScreen())
   ) {
     obstacle = undefined;
     extraLifeItem = undefined;
+    invincibilityItem = undefined;
+    invincibility = false;
     addScore(players.length, 10, 50);
   }
 }
@@ -87,12 +100,13 @@ function update() {
 function spawnWave() {
   addPlayers(); // spawn players
   obstacle = getRandomObstacle(); // spawn obstacle
-  extraLifeItem = rnd(0, 1) < 0.4 ? new ExtraLifeItem() : undefined; // randomly spawn extra life
+  extraLifeItem = rnd(0, 1) < BONUS_LIFE_SPAWN_RATE ? new ExtraLifeItem() : undefined; // randomly spawn extra life
+  invincibilityItem = rnd(0, 1) < INVINCIBILITY_SPAWN_RATE ? new InvincibilityItem() : undefined; // randomly spawn invincibility item
 }
 
 // incrementally add players until max player count is reached
 function addPlayers() {
-  // play("powerUp");  
+  // play("powerUp");
   let extraPlayers = bonusPlayers ? BONUS_PLAYER_COUNT : 0;
   while (players.length < playersCount + extraPlayers) {
     addPlayer();
@@ -125,7 +139,7 @@ function updatePlayers() {
     handleJumping(player);
     updatePlayerPositionAndVelocity(player);
 
-    if (isCollidingWithObstacle(player)) {
+    if (!invincibility && isCollidingWithObstacle(player)) {
       handleCollision(player);
       return false;
     }
@@ -133,6 +147,11 @@ function updatePlayers() {
     if (hitExtraLifeItem(player)) {
       bonusPlayers = true;
       extraLifeItem = undefined;
+    }
+
+    if (hitInvincibilityItem(player)) {
+      invincibility = true;
+      invincibilityItem = undefined;
     }
 
     if (!playerOutOfBounds(player)) {
@@ -195,7 +214,7 @@ function handleJumping(p) {
     (p.isOnFloor || (p.underFoot != null && p.underFoot.isJumped))
   ) {
     // play("jump");
-    p.vel.set(0, -1.5);
+    p.vel.set(0, -JUMP_HEIGHT);
     particle(p.pos, 10, 2, PI / 2, 0.5);
     p.isOnFloor = false;
     p.isJumping = true;
@@ -286,7 +305,12 @@ function checkGameOver() {
 
 function hitExtraLifeItem(p) {
   return char(addWithCharCode("a", floor(p.ticks / 30) % 2), p.pos).isColliding
-    .rect.blue;
+    .rect.green;
+}
+
+function hitInvincibilityItem(p) {
+  return char(addWithCharCode("a", floor(p.ticks / 30) % 2), p.pos).isColliding
+    .rect.yellow;
 }
 
 function updateDownedPlayers() {
@@ -370,10 +394,12 @@ class Wall {
   }
 
   draw() {
+    color("black");
     rect(this.pos.x, this.pos.y, this.width, this.height); // top rect
     rect(this.pos.x, this.height + this.gap, this.width, 100); // bottom rect
 
     particle(this.pos.x, 95, 0.3, this.vx * 2, -0.4, 0.5);
+    color("black");
   }
 
   isOffScreen() {
@@ -399,6 +425,7 @@ class Platform {
   }
 
   draw() {
+    color("black");
     rect(this.pos.x, this.pos.y, this.width, this.height); // left rect
     rect(
       this.pos.x + this.width + this.gap,
@@ -406,6 +433,7 @@ class Platform {
       this.width,
       this.height
     ); // right rect
+    color("black");
   }
 
   isOffScreen() {
@@ -413,10 +441,11 @@ class Platform {
   }
 }
 
+// Item prefabs
 class ExtraLifeItem {
   constructor() {
     this.pos = vec(110, rnd(30, 80));
-    this.vx = rnd(0.5, 1);
+    this.vx = rnd(0.7, 1.2);
     this.radius = 0.5;
   }
 
@@ -426,7 +455,30 @@ class ExtraLifeItem {
   }
 
   draw() {
-    color("blue");
+    color("green");
+    arc(this.pos, this.radius, 5, 360);
+    color("black");
+  }
+
+  isOffScreen() {
+    return this.pos.x < -this.radius;
+  }
+}
+
+class InvincibilityItem {
+  constructor() {
+    this.pos = vec(110, rnd(20, 50));
+    this.vx = rnd(0.8, 1.5);
+    this.radius = 0.5;
+  }
+
+  update() {
+    this.pos.x -= this.vx * difficulty;
+    this.draw();
+  }
+
+  draw() {
+    color("yellow");
     arc(this.pos, this.radius, 5, 360);
     color("black");
   }
