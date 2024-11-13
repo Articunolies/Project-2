@@ -87,7 +87,7 @@ function update() {
 function spawnWave() {
   addPlayers(); // spawn players
   obstacle = getRandomObstacle(); // spawn obstacle
-  extraLifeItem = rnd(0, 1) < 0.3 ? new ExtraLifeItem() : undefined; // randomly spawn extra life
+  extraLifeItem = rnd(0, 1) < 0.4 ? new ExtraLifeItem() : undefined; // randomly spawn extra life
 }
 
 // incrementally add players until max player count is reached
