@@ -96,7 +96,7 @@ function addPlayer() {
 // Main player movement + collision handler
 function updatePlayers() {
   let addingPlayerCount = 0;
-  
+
   players = players.filter((player) => {
     player.ticks++;
 
@@ -225,8 +225,8 @@ function updatePlayerPositionAndVelocity(p) {
 }
 
 function isCollidingWithObstacle(p) {
-  return char(addWithCharCode("a", floor(p.ticks / 30) % 2), p.pos).isColliding.rect
-    .black;
+  return char(addWithCharCode("a", floor(p.ticks / 30) % 2), p.pos).isColliding
+    .rect.black;
 }
 
 function handleCollision(p) {
@@ -247,7 +247,7 @@ function handleCollision(p) {
 }
 
 function playerOutOfBounds(p) {
-  return p.pos.isInRect(0, -50, 100, 150)
+  return p.pos.isInRect(0, -50, 100, 150);
 }
 
 function checkGameOver() {
@@ -328,6 +328,8 @@ class Wall {
   draw() {
     rect(this.pos.x, this.pos.y, this.width, this.height);
     rect(this.pos.x, this.height + this.gap, this.width, 100);
+
+    particle(this.pos.x, 95, 0.3, this.vx * 2, -0.4, 0.5);
   }
 
   isOffScreen() {
