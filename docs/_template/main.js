@@ -38,7 +38,8 @@ let bonusPlayers = false;
 let invincibilityItem;
 let invincibility = false;
 let meteor;
-let groundSlamActivated = true;
+let meteorActivated = false;
+let meteorSpawnedThisRound = false;
 
 // Gameplay parameters
 const PLAYER_JUMP_HEIGHT = 1.75;
@@ -51,7 +52,6 @@ const INVINCIBILITY_SPAWN_RATE = 0.2;
 let players;
 let downedPlayers;
 let playersCount = 8;
-let jump_height = PLAYER_JUMP_HEIGHT;
 
 // Main game loop
 function update() {
@@ -82,15 +82,21 @@ function update() {
     invincibilityItem.update(difficulty);
   }
 
+  if (players.length == 1 && !meteor && !meteorSpawnedThisRound) {
+    meteorActivated = true;
+    meteorSpawnedThisRound = true;
+    triggerMeteor();
+  }
+
   if (meteor) {
     meteor.update(difficulty);
-
-    if (meteor.isOffScreen() && groundSlamActivated) {
+    if (meteor.isOffScreen()) {
       play("explosion");
-      jump_height = METEOR_SLAM_FORCE;
-      groundSlam();
-      jump_height = PLAYER_JUMP_HEIGHT;
-      groundSlamActivated = false;
+      players.forEach((p) => {
+        jump(p, METEOR_SLAM_FORCE);
+      });
+
+      meteor = undefined;
     }
   }
 
@@ -107,7 +113,6 @@ function update() {
   if (isWaveOver()) {
     resetWaveElements();
     addScore(players.length, 10, 50);
-    groundSlamActivated = true;
   }
 }
 
@@ -118,7 +123,6 @@ function spawnWave() {
     rnd(0, 1) < BONUS_LIFE_SPAWN_RATE ? new ExtraLifeItem() : undefined; // randomly spawn extra life
   invincibilityItem =
     rnd(0, 1) < INVINCIBILITY_SPAWN_RATE ? new InvincibilityItem() : undefined; // randomly spawn invincibility item
-  meteor = rnd(0, 1) < METEOR_SPAWN_RATE ? new Meteor() : undefined; // randomly spawn meteor
 }
 
 function isWaveOver() {
@@ -129,10 +133,12 @@ function isWaveOver() {
   );
 }
 
-function groundSlam() {
-  players.forEach((p) => {
-    jump(p);
-  });
+function triggerMeteor() {
+  if (meteorActivated) {
+    console.log("meteor spawned");
+    meteor = new Meteor();
+    meteorActivated = false;
+  }
 }
 
 function resetWaveElements() {
@@ -140,6 +146,7 @@ function resetWaveElements() {
   extraLifeItem = undefined;
   invincibilityItem = undefined;
   invincibility = false;
+  meteorSpawnedThisRound = false;
 }
 
 // incrementally add players until max player count is reached
@@ -185,11 +192,12 @@ function updatePlayers() {
     if (hitExtraLifeItem(player)) {
       play("coin");
       bonusPlayers = true;
+      if (extraLifeItem) addScore(2, extraLifeItem.pos.x, extraLifeItem.pos.y);
       extraLifeItem = undefined;
     }
 
     if (hitInvincibilityItem(player)) {
-      play("laser")
+      play("laser");
       invincibility = true;
       invincibilityItem = undefined;
     }
@@ -253,11 +261,11 @@ function handleJumping(p) {
     input.isJustPressed &&
     (p.isOnFloor || (p.underFoot != null && p.underFoot.isJumped))
   ) {
-    jump(p);
+    jump(p, PLAYER_JUMP_HEIGHT);
   }
 }
 
-function jump(p) {
+function jump(p, jump_height) {
   play("jump");
   p.vel.set(0, -jump_height);
   particle(p.pos, 10, 2, PI / 2, 0.5);
@@ -426,7 +434,7 @@ class Wall {
 
     // obstacle parameters
     this.pos = vec(110, 0);
-    this.vx = rnd(0.4, 0.9);
+    this.vx = rnd(0.4, 0.8);
     this.gap = rnd(30, 60);
     this.width = 6;
     this.height = rnd(15, 30);
@@ -457,7 +465,7 @@ class Platform {
 
     // obstacle parameters
     this.pos = vec(110, rnd(60, 80));
-    this.vx = rnd(0.5, 1);
+    this.vx = rnd(0.5, 0.9);
     this.gap = rnd(30, 60);
     this.width = rnd(10, 40);
     this.height = 6;
@@ -563,6 +571,6 @@ class Meteor {
   }
 
   isOffScreen() {
-    return this.pos.y > 80;
+    return this.pos.y > 85;
   }
 }
