@@ -37,6 +37,9 @@ let downedPlayers; // list
 let playersCount = 8;
 let obstacle;
 let extraLifeItem;
+let bonusPlayers = false;
+
+const BONUS_PLAYER_COUNT = 2;
 
 // Main game loop
 function update() {
@@ -50,9 +53,7 @@ function update() {
 
   // start next obstacle wave
   if (obstacle == null) {
-    addPlayers(); // spawn players
-    obstacle = getRandomObstacle();
-    extraLifeItem = new ExtraLifeItem();
+    spawnWave();
   }
 
   // move obstacle across the screen
@@ -72,21 +73,31 @@ function update() {
   checkGameOver();
   updateDownedPlayers();
 
-  // Check if obstacle is off screen
-  if (obstacle.isOffScreen() && (!extraLifeItem || extraLifeItem.isOffScreen())) {
-    console.log(playersCount)
+  // End wave once all wave elements are destroyed
+  if (
+    obstacle.isOffScreen() &&
+    (!extraLifeItem || extraLifeItem.isOffScreen())
+  ) {
     obstacle = undefined;
     extraLifeItem = undefined;
     addScore(players.length, 10, 50);
   }
 }
 
+function spawnWave() {
+  addPlayers(); // spawn players
+  obstacle = getRandomObstacle(); // spawn obstacle
+  extraLifeItem = rnd(0, 1) < 0.3 ? new ExtraLifeItem() : undefined; // randomly spawn extra life
+}
+
 // incrementally add players until max player count is reached
 function addPlayers() {
-  // play("powerUp");
-  while (players.length < playersCount) {
+  // play("powerUp");  
+  let extraPlayers = bonusPlayers ? BONUS_PLAYER_COUNT : 0;
+  while (players.length < playersCount + extraPlayers) {
     addPlayer();
   }
+  bonusPlayers = false;
 }
 
 // spawn player
@@ -120,7 +131,7 @@ function updatePlayers() {
     }
 
     if (hitExtraLifeItem(player)) {
-      playersCount++;
+      bonusPlayers = true;
       extraLifeItem = undefined;
     }
 
@@ -255,6 +266,7 @@ function handleCollision(p) {
 
   // player hit an obstacle
   play("hit");
+
   downedPlayers.push({
     pos: vec(p.pos),
     vel: vec(p.vel).add(-obstacle.vx * 2, 0),
