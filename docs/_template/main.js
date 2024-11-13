@@ -49,7 +49,7 @@ function update() {
   // start next obstacle wave
   if (obstacle == null) {
     addPlayers(); // spawn players
-    obstacle = rnd(0, 1) < 0.5 ? new Barrel() : new Wall(); // spawn random obstacle
+    obstacle = new Wall(); // spawn random obstacle
   }
 
   // move obstacle across the screen
@@ -59,7 +59,10 @@ function update() {
   rect(0, 93, 99, 7);
 
   // handle player movement + collisions
-  handlePlayer();
+  updatePlayers();
+
+  checkGameOver();
+  updateDownedPlayers();
 
   // Check if obstacle is off screen
   if (obstacle.isOffScreen()) {
@@ -91,7 +94,7 @@ function addPlayer() {
 }
 
 // Main player movement + collision handler
-function handlePlayer() {
+function updatePlayers() {
   let addingPlayerCount = 0;
   
   players = players.filter((player) => {
@@ -115,11 +118,7 @@ function handlePlayer() {
   });
 
   times(addingPlayerCount, addPlayer);
-  resetJumpingState();
-
-  checkGameOver();
-
-  updateDownedPlayers();
+  updateJumpingStates();
 }
 
 function handleStacking(p) {
@@ -181,7 +180,7 @@ function handleJumping(p) {
   }
 }
 
-function resetJumpingState() {
+function updateJumpingStates() {
   players.forEach((p) => {
     if (p.isJumping) {
       p.isJumped = true;
@@ -238,7 +237,9 @@ function handleCollision(p) {
   if (p.underFoot != null) {
     p.underFoot.onHead = undefined;
   }
-  // play("hit");
+
+  // player hit an obstacle
+  play("hit");
   downedPlayers.push({
     pos: vec(p.pos),
     vel: vec(p.vel).add(-obstacle.vx * 2, 0),
@@ -312,7 +313,7 @@ class Wall {
     this.type = "wall";
 
     // obstacle parameters
-    this.pos = vec(100, 0);
+    this.pos = vec(110, 0);
     this.vx = rnd(0.4, 1);
     this.gap = rnd(30, 60);
     this.width = 6;
