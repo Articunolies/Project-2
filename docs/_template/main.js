@@ -203,6 +203,12 @@ function updatePlayers() {
       invincibilityItem = undefined;
     }
 
+    // turns players blue only when invincible
+    if (invincibility) {
+      color("blue");
+      char("a", player.pos);
+    }
+
     if (!playerOutOfBounds(player)) {
       addingPlayerCount++;
       return false;
