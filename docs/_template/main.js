@@ -363,7 +363,7 @@ function hitExtraLifeItem(p) {
 
 function hitInvincibilityItem(p) {
   return char(addWithCharCode("a", floor(p.ticks / 30) % 2), p.pos).isColliding
-    .rect.yellow;
+    .rect.blue;
 }
 
 function updateDownedPlayers() {
@@ -397,6 +397,7 @@ class Barrel {
     this.pos = vec(120 + this.r, 93 - this.r);
     this.vx = rnd(1, 2) / sqrt(this.r * 0.3 + 1);
     this.angle = rnd(PI * 2);
+    this.color = "black";
   }
 
   update(difficulty) {
@@ -532,7 +533,7 @@ class InvincibilityItem {
   }
 
   draw() {
-    color("yellow");
+    color("blue");
     arc(this.pos, this.radius, 5, 360);
     particle(this.pos.x, this.pos.y + this.radius, 0.3, this.vx, 0, 2);
     color("black");
