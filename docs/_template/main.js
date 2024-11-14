@@ -206,6 +206,12 @@ function updatePlayers() {
       invincibilityItem = undefined;
     }
 
+    // turns players blue only when invincible
+    if (invincibility) {
+      color("blue");
+      char("a", player.pos);
+    }
+
     if (!playerOutOfBounds(player)) {
       addingPlayerCount++;
       return false;
@@ -409,6 +415,7 @@ class Barrel {
   }
 
   draw() {
+    color("black");
     arc(this.pos, this.r, 3 + this.r * 0.1, this.angle, this.angle + PI);
     arc(
       this.pos,
