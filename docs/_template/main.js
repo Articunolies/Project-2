@@ -2,6 +2,9 @@ title = "SURVIVOR";
 
 description = `
 [Tap] Jump
+Power Ups:
+[Green] +2 Players
+[Blue] Invincibility
 `;
 
 // Character sprite animation
