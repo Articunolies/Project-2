@@ -412,6 +412,7 @@ class Barrel {
   }
 
   draw() {
+    color("black");
     arc(this.pos, this.r, 3 + this.r * 0.1, this.angle, this.angle + PI);
     arc(
       this.pos,
